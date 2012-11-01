@@ -2,56 +2,36 @@ require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
 Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 
-	desc "Provider for the cloudstack loadbalancer."
+	desc "Provider for the Cloudstack load balancer."
 
 	def load_rules
 		loadbalancer_rules = []
-
-		cs = CloudstackClient::Connection.new(
-        @resource[:cloudstack_url],
-        @resource[:cloudstack_api_key],
-        @resource[:cloudstack_secret_key]
-    )
-
-		projects = cs.list_projects
+		projects = api.list_projects
 
 		projects.each do |project|
 			params = {
         'command' => 'listLoadBalancerRules',
 				'projectid' => project['id']
       }
-      json = cs.send_request(params)
+      json = api.send_request(params)
       loadbalancer_rules += json['loadbalancerrule']
 		end
 		return loadbalancer_rules
 	end
 
 	def create
-		cs = CloudstackClient::Connection.new(
-        @resource[:cloudstack_url],
-        @resource[:cloudstack_api_key],
-        @resource[:cloudstack_secret_key]
-    )
-		
-		projectid = nil
-		projects = cs.list_projects
-		projects.each do |project|
-			if project['name'] == @resource[:projectname]
-				projectid = project['id']
-			end
-		end
+		project_id = nil
+		projects = api.list_projects
+    project = projects.find {|project| project['name'] == @resource[:projectname] }
 
 		params = {
         'command' => 'listPublicIpAddresses',
         'ipaddress' => @resource[:vip],
-				'projectid' => projectid
+				'projectid' => project['id']
     }
 
-		json = cs.send_request(params)
-		puts json.inspect
-
-		publicaddressid = json['publicipaddress'][0]['id']
-		puts publicaddressid
+		json = api.send_request(params)
+		publicaddressid = json['publicipaddress'].first['id']
 
 		params = {
         'command' => 'createLoadBalancerRule',
@@ -60,12 +40,22 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 				'algorithm' => @resource[:algorithm],
         'publicipid' => publicaddressid,
 				'name' => @resource[:name]
-      }
-      json = cs.send_request(params)
+    }
+    api.send_request(params)
+		true
 	end
 
 	def destroy
-		File.unlink("/tmp/#{@resource[:name]}")
+    loadbalancer_rules = load_rules
+    rule = loadbalancer_rules.find {|rule| rule['name'] == @resource[:name] } || false
+    if rule
+  		params = {
+      	  'command' => 'deleteLoadBalancerRule',
+					'id' => rule['id']
+			}
+			api.send_request(params)
+		end
+		true
 	end
 
 	def exists?
@@ -76,4 +66,13 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 		return false
 	end
 
+	private
+
+  def api
+		api = CloudstackClient::Connection.new(
+        @resource[:cloudstack_url],
+        @resource[:cloudstack_api_key],
+        @resource[:cloudstack_secret_key]
+    )
+	end
 end
