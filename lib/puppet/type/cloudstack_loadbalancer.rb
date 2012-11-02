@@ -2,9 +2,16 @@ module Puppet
   newtype(:cloudstack_loadbalancer) do
     @doc = "Manages a Service entry on the Loadbalancer::
 
-      load { \"www.example.com\":
-        ensure => present,
-        vip => \"192.168.0.1\",
+      cloudstack_loadbalancer{'www.example.com':
+        ensure => 'present',
+        algorithm => 'roundrobin',
+        privateport => '80',
+        publicport => '80',
+        vip => '192.168.1.1',
+        projectname => 'Playground',
+        cloudstack_url => 'http://mycloud.com/client/api',
+        cloudstack_api_key => 'your-cloudstack-api-key',
+        cloudstack_secret_key => 'your-cloudstack-api-secret',
       }"
 
     ensurable
@@ -15,7 +22,7 @@ module Puppet
     end
 
     newparam(:vip) do
-      desc "..."
+      desc "The virtual IP of the load balancer service"
     end
 
     newparam(:algorithm) do
@@ -23,15 +30,15 @@ module Puppet
     end
 
     newparam(:privateport) do
-      desc "..."
+      desc "Private load balancer port"
     end
 
     newparam(:publicport) do
-      desc "..."
+      desc "Public load balancer port"
     end
 
     newparam(:projectname) do
-      desc "..."
+      desc "Name of the Cloudstack project"
     end
 
     newparam(:cloudstack_url) do

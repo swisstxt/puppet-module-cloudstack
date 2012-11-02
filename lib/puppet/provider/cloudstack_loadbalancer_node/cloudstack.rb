@@ -1,72 +1,66 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
-Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
+Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
 
   desc "Provider for the Cloudstack load balancer."
 
-  def load_rules
-    loadbalancer_rules = []
-    projects = api.list_projects
-
-    projects.each do |project|
-      params = {
-        'command' => 'listLoadBalancerRules',
-        'projectid' => project['id']
-      }
-      json = api.send_request(params)
-      loadbalancer_rules += json['loadbalancerrule']
-    end
-    return loadbalancer_rules
-  end
-
   def create
-    project_id = nil
-    projects = api.list_projects
-    project = projects.find {|project| project['name'] == @resource[:projectname] }
-
     params = {
-      'command' => 'listPublicIpAddresses',
-      'ipaddress' => @resource[:vip],
-      'projectid' => project['id']
-    }
-
-    json = api.send_request(params)
-    publicaddressid = json['publicipaddress'].first['id']
-
-    params = {
-      'command' => 'createLoadBalancerRule',
-      'privateport' => @resource[:privateport],
-      'publicport' => @resource[:publicport],
-      'algorithm' => @resource[:algorithm],
-      'publicipid' => publicaddressid,
-      'name' => @resource[:name]
+      'command' => 'assignToLoadBalancerRule',
+      'id' => rule['id'],
+      'virtualmachineids' => [server['id']]
     }
     api.send_request(params)
     true
   end
 
   def destroy
-    loadbalancer_rules = load_rules
-    rule = loadbalancer_rules.find {|rule| rule['name'] == @resource[:name] } || false
-    if rule
-      params = {
-        'command' => 'deleteLoadBalancerRule',
-        'id' => rule['id']
-      }
-      api.send_request(params)
-    end
+    params = {
+      'command' => 'removeFromLoadBalancerRule',
+      'id' => rule['id'],
+      'virtualmachineids' => [server['id']]
+    }
+    api.send_request(params)
     true
   end
 
   def exists?
-    loadbalancer_rules = load_rules
-    loadbalancer_rules.each do |rule|
-      return true if rule['name'] == @resource[:name]
+    rules_instances.each do |instance|
+      return true if instance['id'] == server['id']
     end
     return false
   end
 
   private
+  
+  def server
+    api.get_server(@resource[:hostname])
+  end
+  
+  def rule_instances
+    params = {
+      'command' => 'listLoadBalancerRuleInstances',
+      'id' => rule['id']
+    }
+    json = api.send_request(params)
+    json['loadbalancerruleinstance']
+  end
+  
+  def rule
+    params = {
+      'command' => 'listLoadBalancerRules',
+      'projectid' => project['id']
+    }
+    
+    json = api.send_request(params)
+    loadbalancer_rules = json['loadbalancerrule']
+    loadbalancer_rules.find { |rule| rule['name'] == @resource[:name] }
+  end
+  
+  def project
+    projects = api.list_projects
+    project = projects.find {|project| project['name'] == @resource[:projectname] }
+  end
 
   def api
     api = CloudstackClient::Connection.new(

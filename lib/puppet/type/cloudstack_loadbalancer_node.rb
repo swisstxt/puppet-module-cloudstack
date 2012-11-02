@@ -1,10 +1,14 @@
 module Puppet
   newtype(:cloudstack_loadbalancer) do
-    @doc = "Manages a Service entry on the Loadbalancer::
+    @doc = "Manages a node entry to a existing loadbalancer config::
 
-      load { \"www.example.com\":
-        ensure => present,
-        vip => \"192.168.0.1\",
+      cloudstack_loadbalancer_node{'www.example.com':
+        ensure => 'present',
+        projectname => 'Playground',
+        hostname => $::hostname
+        cloudstack_url => 'http://mycloud.com/client/api',
+        cloudstack_api_key => 'your-cloudstack-api-key',
+        cloudstack_secret_key => 'your-cloudstack-api-secret',
       }"
 
     ensurable
@@ -14,24 +18,12 @@ module Puppet
       isnamevar
     end
 
-    newparam(:vip) do
-      desc "..."
-    end
-
-    newparam(:algorithm) do
-      desc "load balancer algorithm (source, roundrobin, leastconn)"
-    end
-
-    newparam(:privateport) do
-      desc "..."
-    end
-
-    newparam(:publicport) do
-      desc "..."
+    newparam(:hostname) do
+      desc "Name of the host"
     end
 
     newparam(:projectname) do
-      desc "..."
+      desc "Name of the Cloudstack project"
     end
 
     newparam(:cloudstack_url) do
@@ -45,7 +37,7 @@ module Puppet
     newparam(:cloudstack_secret_key) do
       desc "Secret for the loadbalancer"
     end
-    
+
   end
 end
 
