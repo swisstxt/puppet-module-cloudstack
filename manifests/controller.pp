@@ -18,7 +18,7 @@ class cloudstack::controller(
   $secret_key,
 ){
 
-    file{'/tmp/cloudstack.yaml':
+    file{'/etc/cloudstack.yaml':
       content => "url:  '$url'\napi_key:  '$api_key'\nsecret_key:  '$secret_key'\n",
       owner => root, group => 0, mode => 0400;
     }

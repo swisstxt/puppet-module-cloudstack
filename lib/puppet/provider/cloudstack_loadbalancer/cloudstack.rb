@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
+require 'yaml'
 
 Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 
@@ -63,10 +64,11 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def api
+    api_config = YAML.load_file( '/etc/cloudstack.yaml' )
     api = CloudstackClient::Connection.new(
-      @resource[:cloudstack_url],
-      @resource[:cloudstack_api_key],
-      @resource[:cloudstack_secret_key]
+      api_config['url'],
+      api_config['api_key'],
+      api_config['secret_key']
     )
   end
 end
