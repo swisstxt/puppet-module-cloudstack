@@ -30,7 +30,11 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
       json = api.send_request(params)
       instances = json['loadbalancerruleinstance'] || []
       instances.each do |instance|
-        instances << new(:name => rule['name'], :hostname => instance['name'], CloudstackClient::ConnectionHelper.load_configuration[:project])
+        instances << new(
+          :name => rule['name'],
+          :hostname => instance['name'],
+          :projectname => CloudstackClient::ConnectionHelper.load_configuration[:project]
+        ) 
       end
     end
     instances   
