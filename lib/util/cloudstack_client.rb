@@ -23,8 +23,20 @@ require 'uri'
 require 'cgi'
 require 'net/http'
 require 'json'
+require 'yaml'
 
 module CloudstackClient
+  class ConnectionHelper
+    def self.load_configuration(config_file = '/etc/cloudstack.yaml')
+      begin
+        return YAML::load(IO.read(config_file))
+      rescue Exception => e
+        puts "Unable to load '#{config_file}'"
+        exit
+      end
+    end
+  end
+  
   class Connection
 
     ASYNC_POLL_INTERVAL = 2.0
@@ -73,7 +85,7 @@ module CloudstackClient
     def wait_for_server_state(id, state)
       while get_server_state(id) != state
         print '..'
-	sleep 5	
+	      sleep 5	
       end
       state
     end

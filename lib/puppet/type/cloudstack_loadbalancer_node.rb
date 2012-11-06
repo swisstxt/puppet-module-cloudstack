@@ -25,19 +25,6 @@ module Puppet
     newparam(:projectname) do
       desc "Name of the Cloudstack project"
     end
-
-    newparam(:cloudstack_url) do
-      desc "Url of the loadbalancer API"
-    end
-
-    newparam(:cloudstack_api_key) do
-      desc "API Key for the loadbalancer"
-    end
-
-    newparam(:cloudstack_secret_key) do
-      desc "Secret for the loadbalancer"
-    end
-
   end
 end
 
