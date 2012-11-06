@@ -7,9 +7,10 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   def create
     params = {
       'command' => 'assignToLoadBalancerRule',
-      'id' => rule()['id'],
-      'virtualmachineids' => [server()['id']]
+      'id' => rule['id'],
+      'virtualmachineids' => [server['id']]
     }
+    puts server['id']
     api.send_request(params)
     true
   end
@@ -17,8 +18,8 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   def destroy
     params = {
       'command' => 'removeFromLoadBalancerRule',
-      'id' => rule()['id'],
-      'virtualmachineids' => [server()['id']]
+      'id' => rule['id'],
+      'virtualmachineids' => [server['id']]
     }
     api.send_request(params)
     true
@@ -26,13 +27,21 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
 
   def exists?
     rule_instances.each do |instance|
-      return true if instance['id'] == server()['id']
+      return true if instance['id'] == server['id']
     end
     return false
   end
   
   def server
-    api.get_server(@resource[:hostname], project['id'])
+		params = {
+    	'command' => 'listVirtualMachines',
+      'name' => @resource[:hostname],
+			'projectid' => project['id'],
+      'zoneid' => rule['zoneid']
+    }
+    json = api.send_request(params)
+    machines = json['virtualmachine'] || []
+		machines.find { |machine| machine['name'] == @resource[:hostname] }
   end
   
   def rule_instances
@@ -49,7 +58,7 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   def rule
     params = {
       'command' => 'listLoadBalancerRules',
-      'projectid' => project()['id']
+      'projectid' => project['id']
     }
     json = api.send_request(params)
     loadbalancer_rules = json['loadbalancerrule']
