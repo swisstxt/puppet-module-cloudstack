@@ -35,6 +35,15 @@ module CloudstackClient
         exit
       end
     end
+
+		def self.api
+			config = load_configuration
+			CloudstackClient::Connection.new(
+				config['url'],
+				config['api_key'],
+				config['secret_key']
+			)
+		end
   end
   
   class Connection
@@ -575,7 +584,7 @@ module CloudstackClient
           'name' => name
       }
       json = send_request(params)
-      json['project']
+      json['project'].first
     end
 
     ##
@@ -588,6 +597,21 @@ module CloudstackClient
       json = send_request(params)
       json['project'] || []
     end
+
+		##
+		#	List loadbalancer rules
+		def list_loadbalancer_rules(project_name = nil)    
+    	params = {
+      	'command' => 'listLoadBalancerRules',
+    	}
+			if project_name
+				project = get_project(project_name)
+				params['projectid'] = project['id']
+			end
+    	json = send_request(params)
+    	json['loadbalancerrule']
+  	end
+
 
     ##
     # Sends a synchronous request to the CloudStack API and returns the response as a Hash.

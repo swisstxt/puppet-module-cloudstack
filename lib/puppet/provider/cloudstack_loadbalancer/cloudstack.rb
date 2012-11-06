@@ -5,13 +5,44 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 
   desc "Provider for the Cloudstack load balancer."
 
+	def self.instances
+		api = CloudstackClient::ConnectionHelper.api
+		projectname = CloudstackClient::ConnectionHelper.load_configuration['project']
+		instances = []
+
+		loadbalancer_rules = api.list_loadbalancer_rules(projectname)
+    loadbalancer_rules.each do |rule|
+			instances << new(
+				:name => rule['name'],
+				:privateport => rule['privateport'],
+				:publicport => rule['publicport'], 
+				:algorithm => rule['algorithm'],
+				:publicipid => rule['publicipid'],
+				:ensure => :present
+			)
+		end
+	
+		instances
+	end
+
+	def self.prefetch(resources)
+    instances.each do |prov|
+      if resource = resources[prov.name]
+        resource.provider = prov
+      end
+    end
+  end
+
+
   def create
+		api = CloudstackClient::ConnectionHelper.api
+		ip_address = api.get_public_ip_address(@resource[:vip])
     params = {
       'command' => 'createLoadBalancerRule',
       'privateport' => @resource[:privateport],
       'publicport' => @resource[:publicport],
       'algorithm' => @resource[:algorithm],
-      'publicipid' => public_ip_address['id'],
+      'publicipid' => ip_address['id'],
       'name' => @resource[:name]
     }
     api.send_request(params)
@@ -19,6 +50,10 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def destroy
+		api = CloudstackClient::ConnectionHelper.api
+		projectname = CloudstackClient::ConnectionHelper.load_configuration['project']
+		loadbalancer_rules = api.list_loadbalancer_rules(projectname)
+
     rule = loadbalancer_rules.find {|rule| rule['name'] == @resource[:name] } || false
     if rule
       params = {
@@ -31,44 +66,8 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def exists?
-    loadbalancer_rules.each do |rule|
-      return true if rule['name'] == @resource[:name]
-    end
-    return false
+		get(:ensure) != :absent
   end
 
-  private
   
-  def public_ip_address
-    params = {
-      'command' => 'listPublicIpAddresses',
-      'ipaddress' => @resource[:vip],
-      'projectid' => project['id']
-    }
-    json = api.send_request(params)
-    json['publicipaddress'].first
-  end
-  
-  def project
-    projects = api.list_projects
-    projects.find {|project| project['name'] == @resource[:projectname] }
-  end
-  
-  def loadbalancer_rules    
-    params = {
-      'command' => 'listLoadBalancerRules',
-      'projectid' => project['id']
-    }
-    json = api.send_request(params)
-    json['loadbalancerrule']
-  end
-
-  def api
-    api_config = YAML.load_file( '/etc/cloudstack.yaml' )
-    api = CloudstackClient::Connection.new(
-      api_config['url'],
-      api_config['api_key'],
-      api_config['secret_key']
-    )
-  end
 end
