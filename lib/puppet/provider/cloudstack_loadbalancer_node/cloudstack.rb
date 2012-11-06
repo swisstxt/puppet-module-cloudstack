@@ -7,8 +7,8 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   def create
     params = {
       'command' => 'assignToLoadBalancerRule',
-      'id' => rule['id'],
-      'virtualmachineids' => [server['id']]
+      'id' => rule()['id'],
+      'virtualmachineids' => [server()['id']]
     }
     api.send_request(params)
     true
@@ -17,41 +17,40 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   def destroy
     params = {
       'command' => 'removeFromLoadBalancerRule',
-      'id' => rule['id'],
-      'virtualmachineids' => [server['id']]
+      'id' => rule()['id'],
+      'virtualmachineids' => [server()['id']]
     }
     api.send_request(params)
     true
   end
 
   def exists?
-    rules_instances.each do |instance|
-      return true if instance['id'] == server['id']
+    rule_instances.each do |instance|
+      return true if instance['id'] == server()['id']
     end
     return false
   end
-
-  private
   
   def server
-    api.get_server(@resource[:hostname])
+    api.get_server(@resource[:hostname], project['id'])
   end
   
   def rule_instances
     params = {
       'command' => 'listLoadBalancerRuleInstances',
-      'id' => rule['id']
+      'id' => rule['id'],
+      'listall' => true,
+      'projectid' => project['id']
     }
     json = api.send_request(params)
-    json['loadbalancerruleinstance']
+    json['loadbalancerruleinstance'] || []
   end
   
   def rule
     params = {
       'command' => 'listLoadBalancerRules',
-      'projectid' => project['id']
+      'projectid' => project()['id']
     }
-    
     json = api.send_request(params)
     loadbalancer_rules = json['loadbalancerrule']
     loadbalancer_rules.find { |rule| rule['name'] == @resource[:name] }
@@ -59,7 +58,7 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   
   def project
     projects = api.list_projects
-    project = projects.find {|project| project['name'] == @resource[:projectname] }
+    projects.find {|project| project['name'] == @resource[:projectname] }
   end
 
   def api

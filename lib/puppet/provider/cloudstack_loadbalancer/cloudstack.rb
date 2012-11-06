@@ -45,7 +45,7 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
       'projectid' => project['id']
     }
     json = api.send_request(params)
-    json['publicipaddress'].first['id']
+    json['publicipaddress'].first
   end
   
   def project
