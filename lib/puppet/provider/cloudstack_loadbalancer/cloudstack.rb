@@ -1,15 +1,15 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
 Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
+  include CloudstackClient::Helper
 
   desc "Provider for the Cloudstack load balancer."
 
 	def self.instances
-		api = CloudstackClient::ConnectionHelper.api
-		projectname = CloudstackClient::ConnectionHelper.load_configuration['project']
+    extend CloudstackClient::Helper
 		instances = []
 
-		api.list_loadbalancer_rules(projectname).each do |rule|
+		api.list_loadbalancer_rules(config['project']).each do |rule|
 			instances << new(
 				:name => rule['name'],
 				:privateport => rule['privateport'],
@@ -32,7 +32,6 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def create
-		api = CloudstackClient::ConnectionHelper.api
 		ip_address = api.get_public_ip_address(@resource[:vip])
     params = {
       'command' => 'createLoadBalancerRule',
@@ -47,12 +46,9 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def destroy
-		api = CloudstackClient::ConnectionHelper.api
-		projectname = CloudstackClient::ConnectionHelper.load_configuration['project']
-		loadbalancer_rules = api.list_loadbalancer_rules(projectname)
+		rules = api.list_loadbalancer_rules(config['project'])
 
-    rule = loadbalancer_rules.find {|rule| rule['name'] == @resource[:name] } || false
-    if rule
+    if loadbalancer_rules.find {|rule| rule['name'] == @resource[:name] }
       params = {
         'command' => 'deleteLoadBalancerRule',
         'id' => rule['id']

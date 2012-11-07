@@ -35,7 +35,7 @@ module CloudstackClient
     end
     
     def config
-      @config ||= load_config
+      @config ||= load_configuration
     end
     
     def load_configuration(config_file = '/etc/cloudstack.yaml')
@@ -55,29 +55,6 @@ module CloudstackClient
 				config['secret_key']
 			)
     end
-  end
-  
-  class ConnectionHelper
-    
-    def self.load_configuration(config_file = '/etc/cloudstack.yaml')
-      begin
-        return YAML::load(IO.read(config_file))
-      rescue Exception => e
-        puts "Unable to load '#{config_file}'"
-        exit
-      end
-    end
-    
-    
-
-		def self.api
-			config = load_configuration
-			CloudstackClient::Connection.new(
-				config['url'],
-				config['api_key'],
-				config['secret_key']
-			)
-		end
   end
   
   class Connection
