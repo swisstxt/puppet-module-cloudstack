@@ -2,7 +2,7 @@ require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
 Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   
-  include CloudstackClient::Util
+  include CloudstackClient::Helper
 
   desc "Provider for the Cloudstack load balancer."
   
@@ -38,6 +38,14 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
     
     instances   
   end
+  
+  def self.prefetch(resources)
+    instances.each do |prov|
+      if resource = resources[prov.name]
+        resource.provider = prov
+      end
+    end
+  end
 
   def create
     params = {
@@ -45,7 +53,6 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
       'id' => rule['id'],
       'virtualmachineids' => [server['id']]
     }
-    puts server['id']
     api.send_request(params)
     true
   end

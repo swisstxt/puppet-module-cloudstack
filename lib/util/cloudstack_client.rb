@@ -26,7 +26,7 @@ require 'json'
 require 'yaml'
 
 module CloudstackClient
-  module Util
+  module Helper
     @api = nil
     @config = {}
     
