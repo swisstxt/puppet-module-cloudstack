@@ -1,13 +1,12 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
 Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
+  
+  include CloudstackClient::Util
 
   desc "Provider for the Cloudstack load balancer."
   
   def self.instances
-		config = CloudstackClient::ConnectionHelper.load_configuration
-    api = CloudstackClient::Connection.new(config['url'], config['api_key'], config['secret_key'])
-
     instances = []
     params = {
       'command' => 'listProjects',
@@ -15,7 +14,6 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
       'name' => config['project']
     }
     json = api.send_request(params)
-    json.inspect
     project = json['project'].first 
     
     params = {
@@ -23,8 +21,8 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
       'projectid' => project['id']
     }
     json = api.send_request(params)
-    loadbalancer_rules = json['loadbalancerrule']
-    loadbalancer_rules.each do |rule|
+    
+    json['loadbalancerrule'].each do |rule|
       params = {
         'command' => 'listLoadBalancerRuleInstances',
         'id' => rule['id'],
@@ -37,6 +35,7 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
         instances << new(:name => rule['name'], :hostname => member['name'], :ensure => :present)
       end
     end
+    
     instances   
   end
 
@@ -103,10 +102,5 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
   def project
     project_name = CloudstackClient::ConnectionHelper.load_configuration['project'] 
 		api.get_project(project_name)
-  end
-
-  def api
-    config = CloudstackClient::ConnectionHelper.load_configuration
-    CloudstackClient::Connection.new(config['url'], config['api_key'], config['secret_key'])
   end
 end

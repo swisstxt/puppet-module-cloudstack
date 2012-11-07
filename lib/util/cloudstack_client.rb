@@ -26,7 +26,39 @@ require 'json'
 require 'yaml'
 
 module CloudstackClient
+  module Util
+    @api = nil
+    @config = {}
+    
+    def api
+      @api ||= load_api
+    end
+    
+    def config
+      @config ||= load_config
+    end
+    
+    def load_configuration(config_file = '/etc/cloudstack.yaml')
+      begin
+        return YAML::load(IO.read(config_file))
+      rescue Exception => e
+        puts "Unable to load '#{config_file}'"
+        exit
+      end
+    end
+    
+    def load_api
+      config = load_configuration
+			CloudstackClient::Connection.new(
+				config['url'],
+				config['api_key'],
+				config['secret_key']
+			)
+    end
+  end
+  
   class ConnectionHelper
+    
     def self.load_configuration(config_file = '/etc/cloudstack.yaml')
       begin
         return YAML::load(IO.read(config_file))
@@ -35,6 +67,8 @@ module CloudstackClient
         exit
       end
     end
+    
+    
 
 		def self.api
 			config = load_configuration
@@ -48,8 +82,8 @@ module CloudstackClient
   
   class Connection
 
-    ASYNC_POLL_INTERVAL = 2.0
-    ASYNC_TIMEOUT = 300
+    @@async_poll_interval = 2.0
+    @@async_timeout = 300
 
     def initialize(api_url, api_key, secret_key)
       @api_url = api_url
@@ -662,7 +696,7 @@ module CloudstackClient
           'jobId' => json['jobid']
       }
 
-      max_tries = (ASYNC_TIMEOUT / ASYNC_POLL_INTERVAL).round
+      max_tries = (@@async_timeout / @@async_poll_interval).round
       max_tries.times do
         json = send_request(params)
         status = json['jobstatus']
@@ -678,7 +712,7 @@ module CloudstackClient
         end
 
         STDOUT.flush
-        sleep ASYNC_POLL_INTERVAL
+        sleep @@async_poll_interval
       end
 
       print "\n"

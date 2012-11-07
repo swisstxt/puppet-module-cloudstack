@@ -1,5 +1,4 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
-require 'yaml'
 
 Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 
@@ -10,8 +9,7 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 		projectname = CloudstackClient::ConnectionHelper.load_configuration['project']
 		instances = []
 
-		loadbalancer_rules = api.list_loadbalancer_rules(projectname)
-    loadbalancer_rules.each do |rule|
+		api.list_loadbalancer_rules(projectname).each do |rule|
 			instances << new(
 				:name => rule['name'],
 				:privateport => rule['privateport'],
@@ -32,7 +30,6 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
       end
     end
   end
-
 
   def create
 		api = CloudstackClient::ConnectionHelper.api
@@ -69,5 +66,4 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 		get(:ensure) != :absent
   end
 
-  
 end
