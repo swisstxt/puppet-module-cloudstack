@@ -17,6 +17,7 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
     json = api.send_request(params)
     json['firewallrule'].each do |fw_rule|
       instances << new(
+        :name => "#{fw_rule['ipaddress']}_#{fw_rule['startport']}_#{fw_rule['endport']}",
         :vip => fw_rule['ipaddress'],
         :startport => fw_rule['startport'],
         :endport => fw_rule['endport'],
@@ -45,7 +46,6 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
       'endport' => @resource[:endport],
       'cidrlist' => @resource[:cidrlist],
       'ipaddressid' => public_ip_address['id'],
-
     }
     api.send_request(params)
     true

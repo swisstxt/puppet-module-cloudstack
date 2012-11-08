@@ -22,10 +22,6 @@ module Puppet
       desc "The virtual IP of the firewall rule"
     end
 
-    newparam(:protocol) do
-      desc "The protocol of the firewall rule"
-    end
-
     newparam(:startport) do
       desc "Start port"
     end
@@ -34,10 +30,18 @@ module Puppet
       desc "End port"
     end
     
-		newproperty(:cidrlist) do
+		newparam(:cidrlist) do
 			desc "Mask(s) of IPs permitted to the service"
 			defaultto { "0.0.0.0/0" }
 		end
+
+    newparam(:protocol) do
+      desc "The protocol of the firewall rule"
+			defaultto { "TCP" }
+			validate do |val|
+        fail("Invalid protocol #{val}") unless val == "TCP" || val == "UDP"
+      end
+    end
   end
 end
 
