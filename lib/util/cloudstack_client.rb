@@ -27,20 +27,28 @@ require 'yaml'
 
 module CloudstackClient
   module Helper
+    require 'ostruct'
+    
     @api = nil
     @config = {}
+    @project = nil
     
     def api
       @api ||= load_api
     end
     
-    def config
-      @config ||= load_configuration
+    def config(config_file = '/etc/cloudstack.yaml')
+      @config ||= load_configuration(config_file)
+    end
+    
+    def project
+  		@project ||= api.get_project(config.project)
     end
     
     def load_configuration(config_file = '/etc/cloudstack.yaml')
       begin
-        return YAML::load(IO.read(config_file))
+        config = YAML::load(IO.read(config_file))
+        return OpenStruct.new(config)
       rescue Exception => e
         puts "Unable to load '#{config_file}'"
         exit
@@ -50,9 +58,9 @@ module CloudstackClient
     def load_api
       config = load_configuration
 			CloudstackClient::Connection.new(
-				config['url'],
-				config['api_key'],
-				config['secret_key']
+				config.url
+				config.api_key
+				config.secret_key
 			)
     end
   end

@@ -8,8 +8,7 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 	def self.instances
     extend CloudstackClient::Helper
 		instances = []
-
-		api.list_loadbalancer_rules(config['project']).each do |rule|
+		api.list_loadbalancer_rules(config.project).each do |rule|
 			instances << new(
 				:name => rule['name'],
 				:privateport => rule['privateport'],
@@ -19,7 +18,6 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 				:ensure => :present
 			)
 		end
-	
 		instances
 	end
 
@@ -46,7 +44,7 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def destroy
-		rules = api.list_loadbalancer_rules(config['project'])
+		rules = api.list_loadbalancer_rules(config.project)
 
     if loadbalancer_rules.find {|rule| rule['name'] == @resource[:name] }
       params = {
