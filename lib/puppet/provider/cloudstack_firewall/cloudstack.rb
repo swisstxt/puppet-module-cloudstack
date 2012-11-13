@@ -23,7 +23,6 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
         :endport => fw_rule['endport'],
         :protocol => fw_rule['protocol'],
         :cidrlist => fw_rule['cidrlist'],
-        :cidrlist => fw_rule['cidrlist'],
         :ensure => :present
       )
     end
@@ -44,7 +43,8 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
       'protocol' => @resource[:protocol],
       'startport' => @resource[:startport],
       'endport' => @resource[:endport],
-      'cidrlist' => @resource[:cidrlist],
+      # FIXME cidrlist does throw a api error:wq
+      #'cidrlist' => @resource[:cidrlist].gsub('/', '%2F'),
       'ipaddressid' => public_ip_address['id'],
     }
     api.send_request(params)
