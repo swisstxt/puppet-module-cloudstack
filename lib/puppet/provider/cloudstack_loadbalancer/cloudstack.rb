@@ -30,13 +30,12 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   end
 
   def create
-		ip_address = api.get_public_ip_address(@resource[:vip])
     params = {
       'command' => 'createLoadBalancerRule',
       'privateport' => @resource[:privateport],
       'publicport' => @resource[:publicport],
       'algorithm' => @resource[:algorithm],
-      'publicipid' => ip_address['id'],
+      'publicipid' => public_ip_address['id'],
       'name' => @resource[:name]
     }
     api.send_request(params)
@@ -58,6 +57,18 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
 
   def exists?
 		get(:ensure) != :absent
+  end
+
+  private
+
+  def public_ip_address
+    params = {
+      'command' => 'listPublicIpAddresses',
+      'ipaddress' => @resource[:vip],
+      'projectid' => project['id']
+    }
+    json = api.send_request(params)
+    json['publicipaddress'].first
   end
 
 end

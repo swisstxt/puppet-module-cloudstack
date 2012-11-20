@@ -524,7 +524,7 @@ module CloudstackClient
           'ipaddress' => ip_address
       }
       json = send_request(params)
-      json['publicipaddress'].first
+      json['publicipaddress']
     end
 
 
