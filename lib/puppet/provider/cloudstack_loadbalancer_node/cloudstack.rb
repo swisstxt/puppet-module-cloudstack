@@ -1,7 +1,6 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
 Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
-  
   include CloudstackClient::Helper
 
   desc "Provider for the Cloudstack load balancer."

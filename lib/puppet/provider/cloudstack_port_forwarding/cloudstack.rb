@@ -1,28 +1,29 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
-Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
+Puppet::Type.type(:cloudstack_port_forwarder).provide(:cloudstack) do
   include CloudstackClient::Helper
 
-  desc "Provider for the CloudStack firewall."
+  desc "Provider for the CloudStack port forwarder."
 
 	def self.instances
     extend CloudstackClient::Helper
     
     instances = []
     params = {
-      'command' => 'listFirewallRules',
+      'command' => 'listPortForwardingRules',
       'listall' => 'true',
       'projectid' => project['id']
     }
     json = api.send_request(params)
-    json['firewallrule'].each do |fw_rule|
+    json['portforwardingrule'].each do |pf_rule|
       instances << new(
-        :name => "#{fw_rule['ipaddress']}_#{fw_rule['startport']}_#{fw_rule['endport']}",
-        :vip => fw_rule['ipaddress'],
-        :startport => fw_rule['startport'],
-        :endport => fw_rule['endport'],
-        :protocol => fw_rule['protocol'],
-        :cidrlist => fw_rule['cidrlist'],
+        :name => "#{pf_rule['ipaddress']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}",
+        :vip => pf_rule['ipaddress'],
+        :privateport => pf_rule['privateport'],
+        :publicport => pf_rule['publicport'],
+        :protocol => pf_rule['protocol'],
+        :virtual_machine => pf_rule['virtualmachinename'],
+        :virtual_machine_id => pf_rule['virtualmachineid'],
         :ensure => :present
       )
     end
@@ -39,13 +40,13 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
 
   def create
     params = {
-      'command' => 'createFirewallRule',
+      'command' => 'createPortForwardingRule',
       'protocol' => @resource[:protocol],
-      'startport' => @resource[:startport],
-      'endport' => @resource[:endport],
-      # FIXME cidrlist does throw a api error
-      #'cidrlist' => @resource[:cidrlist].gsub('/', '%2F'),
+      'startport' => @resource[:publicport],
+      'endport' => @resource[:privateport],
       'ipaddressid' => public_ip_address['id'],
+      'virtualmachineid' => @resource[:virtual_machine_id],
+      'openfirewall' => 'true',
     }
     api.send_request(params)
     true
@@ -55,22 +56,22 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
     vip = public_ip_address(@resource[:vip])
     
     params = {
-      'command' => 'listFirewallRules',
+      'command' => 'listPortForwardingRules',
       'projectid' => project['id'],
       'ipaddressid' => vip['id']
     }
     json = api.send_request(params)
-    firewall_rules = json['firewallrule']
+    port_forwarding_rules = json['portforwardingrule']
     
-    rule = firewall_rules.find do |rule|
+    rule = port_forwarding_rules.find do |rule|
       rule['protocol'] == @resource[:protocol] &&
-      rule['startport'] == @resource[:startport] &&
-      rule['endport'] == @resource[:endport] &&
-      rule['cidrlist'] == @resource[:cidrlist]
+      rule['publicport'] == @resource[:publicport] &&
+      rule['privateport'] == @resource[:privateport] &&
+      rule['virtualmachineid'] == @resource[:virtual_machine_id]
     end
     if rule
       params = {
-        'command' => 'deleteFirewallRule',
+        'command' => 'deletePortForwardingRule',
         'id' => rule['id']
       }
       api.send_request(params)

@@ -42,7 +42,6 @@ module Puppet
       desc "Public load balancer port"
       newvalues(/[0-9]{1,5}/)
     end
-
   end
 end
 

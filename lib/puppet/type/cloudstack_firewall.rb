@@ -47,8 +47,5 @@ module Puppet
       defaultto 'TCP'
       newvalues('TCP', 'UDP')
     end
-    
   end # Type
-  
 end # Module
-

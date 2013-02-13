@@ -1,6 +1,6 @@
 module Puppet
   newtype(:cloudstack_loadbalancer_node) do
-    @doc = "Manages a node entry to a existing loadbalancer config::
+    @doc = "Manages a node entry on a existing loadbalancer config::
 
       @@cloudstack_loadbalancer_node{'www.example.com/$hostname':
         ensure => 'present',
@@ -22,7 +22,6 @@ module Puppet
     newparam(:hostname) do
       desc "Name of the host"
     end
-    
   end
 end
 

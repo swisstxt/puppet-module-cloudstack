@@ -174,8 +174,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], project_id=nil)
-
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], project_name=nil)
       if host_name then
         if get_server(host_name) then
           puts "Error: Server '#{host_name}' already exists."
@@ -202,9 +201,16 @@ module CloudstackClient
         exit 1
       end
 
+      project = get_project(project_name) if project_name
+      if !project && project_name then
+        msg = "Project '#{project_name}' is invalid"
+        puts "Error: #{msg}"
+        exit 1
+      end
+
       networks = []
       network_names.each do |name|
-        network = get_network(name, project_id)
+        network = project_name ? get_network(name, project['id']) : get_network(name)
         if !network then
           puts "Error: Network '#{name}' not found"
           exit 1
@@ -227,31 +233,10 @@ module CloudstackClient
           'serviceOfferingId' => service['id'],
           'templateId' => template['id'],
           'zoneId' => zone['id'],
-          'networkids' => network_ids.join(','),
-	  'projectid' => project_id
+          'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
-
-      json = send_async_request(params)
-      json['virtualmachine']
-    end
-
-    ##
-    # Deletes the server with the specified name.
-    #
-
-    def delete_server(name, project_id=nil)
-      server = get_server(name, project_id)
-      if !server || !server['id'] then
-        puts "Error: Virtual machine '#{name}' does not exist"
-        exit 1
-      end
-
-      params = {
-          'command' => 'destroyVirtualMachine',
-          'id' => server['id']
-      }
-      params['projectid'] = project_id if project_id
+      params['projectid'] = project['id'] if project_name
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -596,7 +581,7 @@ module CloudstackClient
     end
 
     ##
-    # Get projectn by name.
+    # Get project by name.
 
     def get_project(name)
       params = {
