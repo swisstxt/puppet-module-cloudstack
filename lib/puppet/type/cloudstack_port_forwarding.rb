@@ -1,10 +1,10 @@
 require 'ipaddr'
 
 module Puppet
-  newtype(:cloudstack_port_forwarder) do
+  newtype(:cloudstack_port_forwarding) do
     @doc = "Manages a port forwarding rule in CloudStack:
 
-      cloudstack_port_forwarder{'rule_name':
+      cloudstack_port_forwarding{'rule_name':
         ensure => 'present',
         vip,
         protocol,

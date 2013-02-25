@@ -1,9 +1,9 @@
 require File.join(File.dirname(__FILE__), '../../../util/cloudstack_client')
 
-Puppet::Type.type(:cloudstack_port_forwarder).provide(:cloudstack) do
+Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
   include CloudstackClient::Helper
 
-  desc "Provider for the CloudStack port forwarder."
+  desc "Provider for the CloudStack port forwarding."
 
 	def self.instances
     extend CloudstackClient::Helper
