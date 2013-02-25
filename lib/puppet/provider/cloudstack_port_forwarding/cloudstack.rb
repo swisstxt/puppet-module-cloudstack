@@ -42,8 +42,8 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     params = {
       'command' => 'createPortForwardingRule',
       'protocol' => @resource[:protocol],
-      'startport' => @resource[:publicport],
-      'endport' => @resource[:privateport],
+      'publicport' => @resource[:publicport],
+      'privateport' => @resource[:privateport],
       'ipaddressid' => public_ip_address['id'],
       'virtualmachineid' => @resource[:virtual_machine_id],
       'openfirewall' => 'true',

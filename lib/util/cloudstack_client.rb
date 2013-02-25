@@ -22,6 +22,7 @@ require 'openssl'
 require 'uri'
 require 'cgi'
 require 'net/http'
+require 'net/https'
 require 'json'
 require 'yaml'
 
@@ -75,6 +76,7 @@ module CloudstackClient
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
+      @ssl = api_url.start_with? "https"
     end
 
     ##
@@ -624,7 +626,7 @@ module CloudstackClient
     # The wrapper element of the response (e.g. mycommandresponse) is discarded and the
     # contents of that element are returned.
 
-		def send_request(params)
+    def send_request(params)
       params['response'] = 'json'
       params['apiKey'] = @api_key
 
@@ -639,8 +641,14 @@ module CloudstackClient
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
+      uri = URI.parse(url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      if @ssl
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end 
 
-      response = Net::HTTP.get_response(URI.parse(url))
+      response = http.request(Net::HTTP::Get.new(uri.request_uri))
 
       if !response.is_a?(Net::HTTPOK) then
         puts "Error #{response.code}: #{response.message}"
