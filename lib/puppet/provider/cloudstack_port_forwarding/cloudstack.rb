@@ -5,9 +5,8 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
 
   desc "Provider for the CloudStack port forwarding."
 
-	def self.instances
+  def self.instances
     extend CloudstackClient::Helper
-    
     instances = []
     params = {
       'command' => 'listPortForwardingRules',
@@ -80,7 +79,7 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
   end
 
   def exists?
-  	get(:ensure) != :absent
+    get(:ensure) != :absent
   end
 
   private
