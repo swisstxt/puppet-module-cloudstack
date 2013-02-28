@@ -27,12 +27,12 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
       )
     end
     instances
-	end
+  end
 	
-	def self.prefetch(resources)
-    instances.each do |prov|
-      if resource = resources[prov.name]
-        resource.provider = prov
+  def self.prefetch(resources)
+    instances.each do |instance|
+      if resource = resources[instance.name]
+        resource.provider = instance
       end
     end
   end
