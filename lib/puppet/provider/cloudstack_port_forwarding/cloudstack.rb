@@ -16,7 +16,7 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     json = api.send_request(params)
     json['portforwardingrule'].each do |pf_rule|
       instances << new(
-        :name => "#{pf_rule['ipaddress']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}",
+        :name => "#{pf_rule['ipaddress']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol']}",
         :vip => pf_rule['ipaddress'],
         :privateport => pf_rule['privateport'],
         :publicport => pf_rule['publicport'],
