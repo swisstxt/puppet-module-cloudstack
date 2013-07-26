@@ -17,7 +17,7 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     json['portforwardingrule'].each do |pf_rule|
       instances << new(
         :name => "#{pf_rule['ipaddress']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol']}",
-        :vip => pf_rule['ipaddress'],
+        :front_ip => pf_rule['ipaddress'],
         :privateport => pf_rule['privateport'],
         :publicport => pf_rule['publicport'],
         :protocol => pf_rule['protocol'],
@@ -52,12 +52,12 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
   end
 
   def destroy
-    vip = public_ip_address(@resource[:vip])
+    front_ip = public_ip_address(@resource[:front_ip])
     
     params = {
       'command' => 'listPortForwardingRules',
       'projectid' => project['id'],
-      'ipaddressid' => vip['id']
+      'ipaddressid' => front_ip['id']
     }
     json = api.send_request(params)
     port_forwarding_rules = json['portforwardingrule']
@@ -87,7 +87,7 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
   def public_ip_address
     params = {
       'command' => 'listPublicIpAddresses',
-      'ipaddress' => @resource[:vip],
+      'ipaddress' => @resource[:front_ip],
       'projectid' => project['id']
     }
     json = api.send_request(params)

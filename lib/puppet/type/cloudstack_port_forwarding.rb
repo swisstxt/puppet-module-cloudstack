@@ -6,7 +6,7 @@ module Puppet
 
       cloudstack_port_forwarding{'rule_name':
         ensure => 'present',
-        vip,
+        front_ip,
         protocol,
         privateport,
         publicport,
@@ -21,7 +21,7 @@ module Puppet
       isnamevar
     end
 
-    newparam(:vip) do
+    newparam(:front_ip) do
       desc "The virtual IP of the port forwarding rule"
       validate do |value|
         fail("Invalid source #{value}") unless (IPAddr.new(value) rescue false)
