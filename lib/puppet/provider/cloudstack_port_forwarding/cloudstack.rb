@@ -10,9 +10,9 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     instances = []
     params = {
       'command' => 'listPortForwardingRules',
-      'listall' => 'true',
-      'projectid' => project['id']
+      'listall' => 'true'
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     json['portforwardingrule'].each do |pf_rule|
       instances << new(
@@ -56,9 +56,9 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     
     params = {
       'command' => 'listPortForwardingRules',
-      'projectid' => project['id'],
       'ipaddressid' => front_ip['id']
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     port_forwarding_rules = json['portforwardingrule']
     
@@ -88,8 +88,8 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     params = {
       'command' => 'listPublicIpAddresses',
       'ipaddress' => @resource[:front_ip],
-      'projectid' => project['id']
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     json['publicipaddress'].first
   end

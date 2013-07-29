@@ -9,18 +9,11 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
     extend CloudstackClient::Helper
 
     instances = []
-    params = {
-      'command' => 'listProjects',
-      'listall' => true,
-      'name' => config.project
-    }
-    json = api.send_request(params)
-    project = json['project'].first 
     
     params = {
       'command' => 'listLoadBalancerRules',
-      'projectid' => project['id']
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     
     json['loadbalancerrule'].each do |rule|
@@ -28,8 +21,8 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
         'command' => 'listLoadBalancerRuleInstances',
         'id' => rule['id'],
         'listall' => true,
-        'projectid' => project['id']
       }
+      params['projectid'] = project['id'] if project
       json = api.send_request(params)
       members = json['loadbalancerruleinstance'] || []
       members.each do |member|
@@ -78,9 +71,9 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
 		params = {
     	'command' => 'listVirtualMachines',
       'name' => @resource[:hostname],
-			'projectid' => project['id'],
       'zoneid' => rule['zoneid']
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     machines = json['virtualmachine'] || []
 		machines.find { |machine| machine['name'] == @resource[:hostname] }
@@ -90,18 +83,18 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
     params = {
       'command' => 'listLoadBalancerRuleInstances',
       'id' => rule['id'],
-      'listall' => true,
-      'projectid' => project['id']
+      'listall' => true
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     json['loadbalancerruleinstance'] || []
   end
   
   def rule
     params = {
-      'command' => 'listLoadBalancerRules',
-      'projectid' => project['id']
+      'command' => 'listLoadBalancerRules'
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     loadbalancer_rules = json['loadbalancerrule'] || []
     loadbalancer_rules.find { |rule| rule['name'] == @resource[:service] }

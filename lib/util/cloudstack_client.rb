@@ -44,7 +44,15 @@ module CloudstackClient
     end
     
     def project
-  		@@project ||= api.get_project(config.project)
+  		@@project ||= get_project
+    end
+
+    def get_project
+      if config.project && config.project != ''
+        return api.get_project(config.project)
+      else
+        return nil
+      end
     end
     
     def load_configuration
@@ -591,7 +599,7 @@ module CloudstackClient
           'name' => name
       }
       json = send_request(params)
-      json['project'].first
+      json['project'].size > 0 ? json['project'].first : nil
     end
 
     ##

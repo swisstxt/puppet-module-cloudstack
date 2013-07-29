@@ -11,9 +11,9 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
     instances = []
     params = {
       'command' => 'listFirewallRules',
-      'listall' => 'true',
-      'projectid' => project['id']
+      'listall' => 'true'
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     json['firewallrule'].each do |fw_rule|
       instances << new(
@@ -56,9 +56,9 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
     
     params = {
       'command' => 'listFirewallRules',
-      'projectid' => project['id'],
       'ipaddressid' => vip['id']
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     firewall_rules = json['firewallrule']
     
@@ -88,8 +88,8 @@ Puppet::Type.type(:cloudstack_firewall).provide(:cloudstack) do
     params = {
       'command' => 'listPublicIpAddresses',
       'ipaddress' => @resource[:vip],
-      'projectid' => project['id']
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     json['publicipaddress'].first
   end

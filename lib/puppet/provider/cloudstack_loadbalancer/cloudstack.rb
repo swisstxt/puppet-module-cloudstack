@@ -64,9 +64,9 @@ Puppet::Type.type(:cloudstack_loadbalancer).provide(:cloudstack) do
   def public_ip_address
     params = {
       'command' => 'listPublicIpAddresses',
-      'ipaddress' => @resource[:vip],
-      'projectid' => project['id']
+      'ipaddress' => @resource[:vip]
     }
+    params['projectid'] = project['id'] if project
     json = api.send_request(params)
     json['publicipaddress'].first
   end
