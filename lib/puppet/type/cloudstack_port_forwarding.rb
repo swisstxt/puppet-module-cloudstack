@@ -48,8 +48,8 @@ module Puppet
 
     newparam(:protocol) do
       desc "The protocol of the port forwarding rule"
-      defaultto 'TCP'
-      newvalues('TCP', 'UDP')
+      defaultto 'tcp'
+      newvalues('TCP', 'UDP', 'tcp', 'udp')
     end
   end # Type
 end # Module

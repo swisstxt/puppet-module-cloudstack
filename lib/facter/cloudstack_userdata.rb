@@ -45,9 +45,9 @@ ENV['PATH']='/bin:/sbin:/usr/bin:/usr/sbin'
 lease_dirs = %w{
   /var/lib/dhclient
   /var/lib/dhcp3
+  /var/lib/dhcp
 }
 metadata = %w{
-  service-offering
   service-offering
   availability-zone
   local-ipv4
@@ -77,7 +77,7 @@ end
 lease_dirs.each do |lease_dir|
   next unless File.directory? lease_dir
 
-  Dir.glob(File.join(lease_dir, 'dhclient-eth0*lease*')).each do |file|
+  Dir.glob(File.join(lease_dir, 'dhclient*eth0*lease*')).each do |file|
     next unless File.size?(file)
 
     virtual_router = File.open(file).grep(/dhcp-server-identifier/).last

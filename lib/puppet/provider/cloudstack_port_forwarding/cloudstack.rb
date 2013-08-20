@@ -16,7 +16,7 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     json = api.send_request(params)
     json['portforwardingrule'].each do |pf_rule|
       instances << new(
-        :name => "#{pf_rule['ipaddress']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol']}",
+        :name => "#{pf_rule['virtualmachineid']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}",
         :front_ip => pf_rule['ipaddress'],
         :privateport => pf_rule['privateport'],
         :publicport => pf_rule['publicport'],
@@ -79,7 +79,12 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
   end
 
   def exists?
-    get(:ensure) != :absent
+    self.class.instances.each do |instance|
+      if instance.get(:name) == "#{@resource[:virtual_machine_id]}_#{@resource[:privateport]}_#{@resource[:publicport]}_#{@resource[:protocol].downcase}"
+        return true
+      end
+    end
+    return false
   end
 
   private
