@@ -14,21 +14,23 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     }
     params['projectid'] = project['id'] if project
     json = api.send_request(params)
-    json['portforwardingrule'].each do |pf_rule|
-      instances << new(
-        :name => "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}",
-        :front_ip => pf_rule['ipaddress'],
-        :privateport => pf_rule['privateport'],
-        :publicport => pf_rule['publicport'],
-        :protocol => pf_rule['protocol'],
-        :virtual_machine => pf_rule['virtualmachinename'],
-        :virtual_machine_id => pf_rule['virtualmachineid'],
-        :ensure => :present
-      )
+    if json.has_key?('portforwardingrule')
+      json['portforwardingrule'].each do |pf_rule|
+        instances << new(
+          :name => "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}",
+          :front_ip => pf_rule['ipaddress'],
+          :privateport => pf_rule['privateport'],
+          :publicport => pf_rule['publicport'],
+          :protocol => pf_rule['protocol'],
+          :virtual_machine => pf_rule['virtualmachinename'],
+          :virtual_machine_id => pf_rule['virtualmachineid'],
+          :ensure => :present
+        )
+      end
     end
     instances
   end
-	
+  
   def self.prefetch(resources)
     instances.each do |instance|
       if resource = resources[instance.name]
@@ -36,7 +38,7 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
       end
     end
   end
-
+  
   def create
     params = {
       'command' => 'createPortForwardingRule',

@@ -15,18 +15,20 @@ Puppet::Type.type(:cloudstack_loadbalancer_node).provide(:cloudstack) do
     }
     params['projectid'] = project['id'] if project
     json = api.send_request(params)
-    
-    json['loadbalancerrule'].each do |rule|
-      params = {
-        'command' => 'listLoadBalancerRuleInstances',
-        'id' => rule['id'],
-        'listall' => true,
-      }
-      params['projectid'] = project['id'] if project
-      json = api.send_request(params)
-      members = json['loadbalancerruleinstance'] || []
-      members.each do |member|
-        instances << new(:name => "#{rule['name']}_#{member['name']}", :hostname => member['name'], :ensure => :present)
+   
+    if json.has_key?('loadbalancerrule') 
+      json['loadbalancerrule'].each do |rule|
+        params = {
+          'command' => 'listLoadBalancerRuleInstances',
+          'id' => rule['id'],
+          'listall' => true,
+        }
+        params['projectid'] = project['id'] if project
+        json = api.send_request(params)
+        members = json['loadbalancerruleinstance'] || []
+        members.each do |member|
+          instances << new(:name => "#{rule['name']}_#{member['name']}", :hostname => member['name'], :ensure => :present)
+        end
       end
     end
     
