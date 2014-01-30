@@ -57,7 +57,7 @@ metadata = %w{
   instance-id
 }
 
-def is_port_open?(ip, port)
+def port_open?(ip, port)
   begin
     Timeout::timeout(1) do
       begin
@@ -77,14 +77,14 @@ end
 lease_dirs.each do |lease_dir|
   next unless File.directory? lease_dir
 
-  Dir.glob(File.join(lease_dir, 'dhclient*eth0*lease*')).each do |file|
+  Dir.glob(File.join(lease_dir, 'dhclient*lease*')).each do |file|
     next unless File.size?(file)
 
     virtual_router = File.open(file).grep(/dhcp-server-identifier/).last
-    next unless virtual_router
+    next unless virtual_router and virtual_router[/\.1$/]
     virtual_router = virtual_router[/\d+(\.\d+){3}/]
 
-    next unless is_port_open?(virtual_router, 80)
+    next unless port_open?(virtual_router, 80)
     http = Net::HTTP.new(virtual_router)
 
     http.get('/latest/user-data').body.each_line do |line|
