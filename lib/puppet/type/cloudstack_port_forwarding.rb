@@ -11,7 +11,8 @@ module Puppet
         privateport,
         publicport,
         virtual_machine,
-        virtual_machine_id
+        virtual_machine_id,
+        vm_guest_ip => unset
       }"
 
     ensurable
@@ -51,5 +52,22 @@ module Puppet
       defaultto 'tcp'
       newvalues('TCP', 'UDP', 'tcp', 'udp')
     end
+
+    newparam(:vm_guest_ip) do
+      desc "IP of the guest VM"
+      validate do |value|
+        fail("Invalid vm_guest_ip #{value}") unless (IPAddr.new(value) rescue false)
+      end
+
+    newparam(:private_end_port) do
+      desc "Private END port"
+      newvalues(/[0-9]{1,5}/)
+    end
+
+    newparam(:public_end_port) do
+      desc "Public END port"
+      newvalues(/[0-9]{1,5}/)
+    end
+
   end # Type
 end # Module
