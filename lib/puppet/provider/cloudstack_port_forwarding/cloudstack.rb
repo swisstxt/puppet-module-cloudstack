@@ -17,12 +17,13 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     if json.has_key?('portforwardingrule')
       json['portforwardingrule'].each do |pf_rule|
         instances << new(
-          :name => "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}",
+          :name => "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['vmguestip']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}",
           :front_ip => pf_rule['ipaddress'],
           :privateport => pf_rule['privateport'],
           :publicport => pf_rule['publicport'],
           :protocol => pf_rule['protocol'],
           :virtual_machine => pf_rule['virtualmachinename'],
+          :vm_guest_ip => pf_rule['vmguestip'],
           :virtual_machine_id => pf_rule['virtualmachineid'],
           :ensure => :present
         )
@@ -49,6 +50,19 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
       'virtualmachineid' => @resource[:virtual_machine_id],
       'openfirewall' => 'true',
     }
+
+    if vm_guest_ip
+      params['vmguestip'] = @resource[:vm_guest_ip]
+    end
+
+    if private_end_port
+      params['privateendport'] = @resource[:private_end_port]
+    end
+
+    if public_end_port
+      params['publicendport'] = @resource[:public_end_port]
+    end
+
     api.send_request(params)
     true
   end
