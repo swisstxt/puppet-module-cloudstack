@@ -16,8 +16,14 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
     json = api.send_request(params)
     if json.has_key?('portforwardingrule')
       json['portforwardingrule'].each do |pf_rule|
+        if api.is_secondary_ip(pf_rule['virtualmachineid'], pf_rule['vmguestip'])
+          name = "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['vmguestip']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}"
+        else
+          name = "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}"
+        end
+
         instances << new(
-          :name => "#{pf_rule['ipaddress']}_#{pf_rule['virtualmachineid']}_#{pf_rule['vmguestip']}_#{pf_rule['privateport']}_#{pf_rule['publicport']}_#{pf_rule['protocol'].downcase}",
+          :name => name,
           :front_ip => pf_rule['ipaddress'],
           :privateport => pf_rule['privateport'],
           :publicport => pf_rule['publicport'],
@@ -51,15 +57,15 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
       'openfirewall' => 'true',
     }
 
-    if vm_guest_ip
+    if @resource[:vm_guest_ip]
       params['vmguestip'] = @resource[:vm_guest_ip]
     end
 
-    if private_end_port
+    if @resource[:private_end_port]
       params['privateendport'] = @resource[:private_end_port]
     end
 
-    if public_end_port
+    if @resource[:public_end_port]
       params['publicendport'] = @resource[:public_end_port]
     end
 
@@ -95,8 +101,14 @@ Puppet::Type.type(:cloudstack_port_forwarding).provide(:cloudstack) do
   end
 
   def exists?
+    if api.is_secondary_ip(@resource['virtual_machine_id'], @resource['vm_guest_ip'])
+      expected_name = "#{@resource['front_ip']}_#{@resource['virtual_machine_id']}_#{@resource['vm_guest_ip']}_#{@resource['privateport']}_#{@resource['publicport']}_#{@resource['protocol'].downcase}"
+    else
+      expected_name = "#{@resource['front_ip']}_#{@resource['virtual_machine_id']}_#{@resource['privateport']}_#{@resource['publicport']}_#{@resource['protocol'].downcase}"
+    end
+
     self.class.instances.each do |instance|
-      if instance.get(:name) == "#{@resource[:front_ip]}_#{@resource[:virtual_machine_id]}_#{@resource[:privateport]}_#{@resource[:publicport]}_#{@resource[:protocol].downcase}"
+      if instance.get(:name) == expected_name
         return true
       end
     end
