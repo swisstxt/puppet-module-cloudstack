@@ -1,6 +1,6 @@
-# CloudstackClient by Nik Wolfgramm (<nik.wolfgramm@swisstxt.ch>) based on 
+# CloudstackClient by Nik Wolfgramm (<nik.wolfgramm@swisstxt.ch>) based on
 # knife-cloudstack by Ryan Holmes (<rholmes@edmunds.com>), KC Braunschweig (<kcbraunschweig@gmail.com>)
-# 
+#
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,22 +30,22 @@ require 'ipaddr'
 module CloudstackClient
   module Helper
     require 'ostruct'
-    
+
     @@api = nil
     @@config = nil
     @@project = nil
     @@config_file = '/etc/cloudstack.yaml'
-    
+
     def api
       @@api ||= load_api
     end
-    
+
     def config
       @@config ||= load_configuration
     end
-    
+
     def project
-  		@@project ||= get_project
+      @@project ||= get_project
     end
 
     def get_project
@@ -55,7 +55,7 @@ module CloudstackClient
         return nil
       end
     end
-    
+
     def load_configuration
       begin
         config = YAML::load( IO.read(@@config_file) )
@@ -65,17 +65,17 @@ module CloudstackClient
         exit
       end
     end
-    
+
     def load_api
       config = load_configuration
-			CloudstackClient::Connection.new(
-				config.url,
-				config.api_key,
-				config.secret_key
-			)
+      CloudstackClient::Connection.new(
+        config.url,
+        config.api_key,
+        config.secret_key
+      )
     end
   end
-  
+
   class Connection
 
     @@async_poll_interval = 2.0
@@ -126,7 +126,7 @@ module CloudstackClient
     def wait_for_server_state(id, state)
       while get_server_state(id) != state
         print '..'
-	      sleep 5	
+        sleep 5
       end
       state
     end
@@ -171,18 +171,52 @@ module CloudstackClient
       end
     end
 
+    def list_nics(virtual_machine_id)
+      if not @@nic_cache.has_key?(virtual_machine_id)
+        @@nic_cache[virtual_machine_id] = send_request({'command' => 'listNics', 'virtualmachineid' => virtual_machine_id})
+      end
+
+      raise "Could not get list of network cards for virtual machine #{virtual_machine_id}" unless @@nic_cache[virtual_machine_id].has_key?('nic')
+
+      @@nic_cache[virtual_machine_id]
+    end
+
+    ## 
+    # Assigns secondary IP to virtual machine identified by virtual_machine_id
+
+    def add_ip_to_virtualmachine(virtual_machine_id, ipaddress)
+      nic = get_server_default_nic(send_request({'command' => 'listNics', 'virtualmachineid' => virtual_machine_id}))
+      raise "Could not find network card id for virtual_machine #{virtual_machine_id}" unless nic.has_key?('id')
+
+      json = send_request({'command' => 'addIpToNic', 'nicid' => nic['id'], 'ipaddress' => ipaddress})
+
+      debug("reserved secondary ip #{ipaddress} for virtual machine #{virtual_machine_id}:")
+      debug(json.to_yaml)
+      true
+    end
+
+    ##
+    # Test if ip is a primary ip of the virtual_machine identified by virtual_machine_id
+
+    def is_primary_ip(virtual_machine_id, ip)
+      begin
+        IPAddr.new(ip)
+      rescue
+        return false
+      end
+
+      json = list_nics(virtual_machine_id)
+      json['nic'].each do |nic_item|
+        next unless nic_item.has_key?('ipaddress')
+        return true if nic_item['ipaddress'] == ip
+      end
+      return false
+    end
+
     ##
     # Test if ip is a secondary ip of the virtual_machine identified by virtual_machine_id
 
     def is_secondary_ip(virtual_machine_id, ip)
-
-      key = "#{virtual_machine_id}#{ip}"
-      @@nic_cache[key] = verify_is_secondary_ip(virtual_machine_id, ip) unless @@nic_cache.has_key?(key)
-
-      return @@nic_cache[key]
-    end
-
-    def verify_is_secondary_ip(virtual_machine_id, ip)
       begin
         IPAddr.new(ip)
       rescue
@@ -191,20 +225,15 @@ module CloudstackClient
         return false
       end
 
-      json = send_request({'command' => 'listNics', 'virtualmachineid' => virtual_machine_id})
-
-      return false unless json.has_key?('nic')
-
+      json = listNics(virtual_machine_id)
       json['nic'].each do |nic_item|
         next unless nic_item.has_key?('secondaryip')
         nic_item['secondaryip'].each do |sip_item|
-          return true unless not sip_item['ipaddress'] = ip
+          return true if sip_item['ipaddress'] == ip
         end
       end
       return false
     end
-
-
 
     ##
     # Lists all the servers in your account.
@@ -566,7 +595,7 @@ module CloudstackClient
     def associate_ip_address(network_id)
       params = {
           'command' => 'associateIpAddress',
-	  'networkid' => network_id
+          'networkid' => network_id
       }
 
       json = send_async_request(params)
@@ -641,7 +670,7 @@ module CloudstackClient
 
     ##
     # Lists projects.
-            
+
     def list_projects
       params = {
           'command' => 'listProjects',
@@ -650,19 +679,19 @@ module CloudstackClient
       json['project'] || []
     end
 
-		##
-		#	List loadbalancer rules
-		def list_loadbalancer_rules(project_name = nil)    
-    	params = {
-      	'command' => 'listLoadBalancerRules',
-    	}
-			if project_name
-				project = get_project(project_name)
-				params['projectid'] = project['id']
-			end
-    	json = send_request(params)
-    	json['loadbalancerrule']
-  	end
+    ##
+    # List loadbalancer rules
+    def list_loadbalancer_rules(project_name = nil)
+      params = {
+          'command' => 'listLoadBalancerRules',
+      }
+      if project_name
+        project = get_project(project_name)
+        params['projectid'] = project['id']
+      end
+      json = send_request(params)
+      json['loadbalancerrule']
+    end
 
 
     ##
@@ -691,7 +720,7 @@ module CloudstackClient
       if @ssl
         http.use_ssl = true
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end 
+      end
 
       response = http.request(Net::HTTP::Get.new(uri.request_uri))
 
@@ -699,7 +728,6 @@ module CloudstackClient
         puts "Error #{response.code}: #{response.message}"
         puts JSON.pretty_generate(JSON.parse(response.body))
         puts "URL: #{url}"
-        exit 1
       end
 
       json = JSON.parse(response.body)
